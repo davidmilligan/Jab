@@ -28,7 +28,7 @@ namespace Jab.Test
             var provider = services.BuildServiceProvider();
             var a = provider.GetService<A>();
             Assert.NotNull(a);
-            Assert.NotNull(a.C);
+            Assert.NotNull(a?.C);
         }
 
         [Fact]

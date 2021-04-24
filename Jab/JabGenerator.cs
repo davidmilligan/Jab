@@ -31,12 +31,18 @@ namespace Jab
 
                 foreach (var type in receiver.Fields.GroupBy(t => t.Symbol.ContainingType))
                 {
+                    // special cases (e.g. ILogger<T>)
+                    string ParameterType(ITypeSymbol parameterType) => parameterType.Name switch
+                    {
+                        "ILogger" => $"ILogger<{type.Key.Name}>",
+                        _ => parameterType.ToDisplayString()
+                    };
                     var source = $@"
 namespace {type.Key.ContainingNamespace.ToDisplayString()}
 {{
     public partial class {type.Key.Name}
     {{
-        public {type.Key.Name}({string.Join(", ", type.Select(t => $"{t.Type.ToDisplayString()} {t.Symbol.Name}"))})
+        public {type.Key.Name}({string.Join(", ", type.Select(t => $"{ParameterType(t.Type)} {t.Symbol.Name}"))})
         {{
             {string.Join(@"
             ", type.Select(t => $"this.{t.Symbol.Name} = {t.Symbol.Name};"))}

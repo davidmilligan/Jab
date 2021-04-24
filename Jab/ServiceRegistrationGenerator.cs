@@ -45,7 +45,7 @@ namespace {receiver.GlobalNamespace}
     }}
 }}
 ";
-                context.AddSource($"JabServiceRegistrations.cs", SourceText.From(source, Encoding.UTF8));
+                context.AddSource($"{receiver.GlobalNamespace}_JabServiceRegistrations.cs", SourceText.From(source, Encoding.UTF8));
             }
         }
 
