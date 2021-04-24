@@ -37,9 +37,9 @@ namespace Jab
                         .Select(t => new EmptyGrouping<INamedTypeSymbol, (ITypeSymbol, ISymbol)>(t))))
                 {
                     // special cases (e.g. ILogger<T>)
-                    string ParameterType(ITypeSymbol parameterType) => parameterType.Name switch
+                    string ParameterType(ITypeSymbol parameterType) => parameterType.ToDisplayString() switch
                     {
-                        "ILogger" => $"ILogger<{type.Key.Name}>",
+                        "Microsoft.Extensions.Logging.ILogger" => $"Microsoft.Extensions.Logging.ILogger<{type.Key.Name}>",
                         _ => parameterType.ToDisplayString()
                     };
                     // find parent constructor with least number of parameters
@@ -63,6 +63,7 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
     }}
 }}
 ";
+                    File.WriteAllText($"C:\\temp\\JabGenerated_{type.Key.Name}.cs", source);
                     context.AddSource($"JabGenerated_{type.Key.Name}.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }

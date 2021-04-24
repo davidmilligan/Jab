@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using Xunit;
 
@@ -51,6 +53,19 @@ namespace Jab.Test
             Assert.NotEqual(a1, a2);
             Assert.Equal(a1.C, a2.C);
         }
+
+        [Fact]
+        public void ILoggerUsesEnclosingClassAsGenericTypeArgument()
+        {
+            var services = new ServiceCollection();
+            var mockProvider = new Mock<ILoggerProvider>();
+            mockProvider.Setup(t => t.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
+            services.AddLogging(t => t.AddProvider(mockProvider.Object));
+            services.Jab();
+            var logging = services.BuildServiceProvider().GetRequiredService<Logging>();
+            logging.Logger.LogInformation("Test");
+            mockProvider.Verify(t => t.CreateLogger(typeof(Logging).FullName));
+        }
     }
 
     [Transient]
@@ -71,7 +86,7 @@ namespace Jab.Test
         [Jab] public F F { get; }
     }
 
-    public partial class E : D 
+    public partial class E : D
     {
         [Jab] public G G { get; }
     }
@@ -81,4 +96,10 @@ namespace Jab.Test
     [Singleton] public class G { }
 
     [Jab] public partial class H : D { }
+
+    [Transient]
+    public partial class Logging
+    {
+        [Jab] public ILogger Logger { get; }
+    }
 }
