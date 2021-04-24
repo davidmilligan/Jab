@@ -18,14 +18,7 @@ namespace Jab
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            context.RegisterForPostInitialization(t => t.AddSource(AttributeName, $@"
-using System;
-namespace {Namespace}
-{{
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    internal sealed class {AttributeName} : Attribute {{ }}
-}}
-"));
+            context.RegisterForPostInitialization(t => t.AddAttribute(Namespace, AttributeName, AttributeTargets.Field, AttributeTargets.Property));
 
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
         }
@@ -39,11 +32,11 @@ namespace {Namespace}
                 foreach (var type in receiver.Fields.GroupBy(t => t.Symbol.ContainingType))
                 {
                     var source = $@"
-namespace {type.Key.ContainingNamespace.Name}
+namespace {type.Key.ContainingNamespace.ToDisplayString()}
 {{
     public partial class {type.Key.Name}
     {{
-        public {type.Key.Name}({string.Join(", ", type.Select(t => $"{t.Type.Name} {t.Symbol.Name}"))})
+        public {type.Key.Name}({string.Join(", ", type.Select(t => $"{t.Type.ToDisplayString()} {t.Symbol.Name}"))})
         {{
             {string.Join(@"
             ", type.Select(t => $"this.{t.Symbol.Name} = {t.Symbol.Name};"))}
@@ -51,7 +44,7 @@ namespace {type.Key.ContainingNamespace.Name}
     }}
 }}
 ";
-                    //File.WriteAllText("C:\\temp\\Jab_debug.cs", source);
+                    File.WriteAllText("C:\\temp\\Jab_debug.cs", source);
                     context.AddSource($"JabGenerated_{type.Key.Name}.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }
