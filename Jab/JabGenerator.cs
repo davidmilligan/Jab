@@ -44,7 +44,6 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
     }}
 }}
 ";
-                    File.WriteAllText("C:\\temp\\Jab_debug.cs", source);
                     context.AddSource($"JabGenerated_{type.Key.Name}.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }

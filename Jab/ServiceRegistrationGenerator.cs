@@ -45,7 +45,6 @@ namespace {receiver.GlobalNamespace}
     }}
 }}
 ";
-                File.WriteAllText("C:\\temp\\JabServiceRegistrations.cs", source);
                 context.AddSource($"JabServiceRegistrations.cs", SourceText.From(source, Encoding.UTF8));
             }
         }
