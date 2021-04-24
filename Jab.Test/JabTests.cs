@@ -7,17 +7,26 @@ namespace Jab.Test
     public class JabTests
     {
         [Fact]
-        public void ConstructorFieldArgumentsTest()
+        public void ConstructorFieldArgumentsInitialized()
         {
             var (b, c) = (new B(), new C());
             Assert.True(new A(b, c).CheckB(b));
         }
 
         [Fact]
-        public void ConstructorPropertyArgumentsTest()
+        public void ConstructorPropertyArgumentsInitialized()
         {
             var (b, c) = (new B(), new C());
             Assert.Equal(c, new A(b, c).C);
+        }
+
+        [Fact]
+        public void InheritedArgumentsInitialized()
+        {
+            var (b, c, f, g) = (new B(), new C(), new F(), new G());
+            Assert.Equal(c, new E(g, f, b, c).C);
+            Assert.Equal(f, new E(g, f, b, c).F);
+            Assert.Equal(g, new E(g, f, b, c).G);
         }
 
         [Fact]
@@ -53,9 +62,23 @@ namespace Jab.Test
         public bool CheckB(B expected) => b == expected;
     }
 
-    [Transient]
-    public class B {}
+    [Transient] public class B { }
 
-    [Singleton]
-    public class C {}
+    [Singleton] public class C { }
+
+    public partial class D : A
+    {
+        [Jab] public F F { get; }
+    }
+
+    public partial class E : D 
+    {
+        [Jab] public G G { get; }
+    }
+
+    [Singleton] public class F { }
+
+    [Singleton] public class G { }
+
+    [Jab] public partial class H : D { }
 }
