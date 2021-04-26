@@ -5,7 +5,7 @@ Namely:
 
 * Contructors that simply take a bunch of dependencies as parameters and store them in class fields or properties
 * Service registrations (e.g. `services.AddTransient<IMyService, MyService>()`)
-* TODO: Interfaces that mirror concrete implementation types (i.e. automatic creation of interfaces for given classes based on their public members)
+* Interfaces that mirror concrete implementation types (i.e. automatic creation of interfaces for given classes based on their public members)
 * *More to come...*
 
 ## Constructor Generation
@@ -56,6 +56,25 @@ public void ConfigureServices(IServiceCollection services)
   //...
 }
 ```
+
+## Automatic Interfaces
+Simply declare that a type implements an interface with the same name and a prefix "I" and if that interface doesn't exist at compile time, Jab will automatically generate it based on the public members of the class. The interface will be made to inherit from any other interfaces the class inherits from, including automatically generated interfaces of base classes.
+
+Given (where IMyService isn't defined):
+```
+public class MyService : IMyService, ISomethingElse
+{
+    public void DoSomething();
+}
+```
+Jab will generate:
+```
+public interface IMyService : ISomethingElse
+{
+    void DoSomething();
+}
+```
+
 
 ## Why "Jab"?
 The idea for the name comes from a conversation I overhead where a friend was asking another friend "have you been jabbed yet?" meaning "have you recieved a covid-19 vaccine yet?".

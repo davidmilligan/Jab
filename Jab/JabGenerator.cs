@@ -63,7 +63,6 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
     }}
 }}
 ";
-                    File.WriteAllText($"C:\\temp\\JabGenerated_{type.Key.Name}.cs", source);
                     context.AddSource($"JabGenerated_{type.Key.Name}.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }
@@ -86,14 +85,13 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
             public List<(ITypeSymbol Type, ISymbol Symbol)> Fields = new();
             public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
             {
-                static bool HasAttribute(ISymbol symbol) => symbol?.GetAttributes().Any(t => t.AttributeClass?.ToDisplayString() == $"{Namespace}.{AttributeName}") == true;
                 if (context.Node is FieldDeclarationSyntax fieldDeclarationSyntax
                     && fieldDeclarationSyntax.AttributeLists.Count > 0)
                 {
                     foreach (var variable in fieldDeclarationSyntax.Declaration.Variables)
                     {
                         if (context.SemanticModel.GetDeclaredSymbol(variable) is IFieldSymbol field
-                            && HasAttribute(field))
+                            && field.HasAttribute(Namespace, AttributeName))
                         {
                             Fields.Add((field.Type, field));
                         }
@@ -102,14 +100,14 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
                 else if (context.Node is PropertyDeclarationSyntax propertyDeclarationSyntax
                     && propertyDeclarationSyntax.AttributeLists.Count > 0
                     && context.SemanticModel.GetDeclaredSymbol(propertyDeclarationSyntax) is IPropertySymbol property
-                    && HasAttribute(property))
+                    && property.HasAttribute(Namespace, AttributeName))
                 {
                     Fields.Add((property.Type, property));
                 }
                 else if (context.Node is ClassDeclarationSyntax classDeclarationSyntax
                     && classDeclarationSyntax.AttributeLists.Count > 0
                     && context.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax) is INamedTypeSymbol type
-                    && HasAttribute(type))
+                    && type.HasAttribute(Namespace, AttributeName))
                 {
                     Classes.Add(type);
                 }

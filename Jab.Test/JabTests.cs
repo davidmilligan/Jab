@@ -2,6 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.ComponentModel;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Jab.Test
@@ -101,5 +105,39 @@ namespace Jab.Test
     public partial class Logging
     {
         [Jab] public ILogger Logger { get; }
+    }
+
+    public class BaseService1<T> : IBaseService1<T>
+    {
+        public void BaseMethod(T value) { }
+    }
+
+    public class Service<T> : BaseService1<string>, IService<T>, IDisposable, INotifyPropertyChanged where T : class
+    {
+        public int Property { get; set; }
+        public string? Readonly { get; }
+        public object this[string arg1] { get => Property; set { } }
+
+        public async Task MethodAsync(CancellationToken token = default)
+        {
+            await Task.Delay(Property, token);
+        }
+
+        public T1 GenericMethod<T1, T2>(T2 arg1) where T1 : class, new()
+        {
+            return new();
+        }
+
+        public virtual void Method1(T arg1, params StringBuilder[] arg2) { }
+
+        public (string, int) TupleMethod() => default;
+
+        private void PrivateMethod() { }
+
+        public void Dispose() { }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public event EventHandler? MyEvent2;
     }
 }
