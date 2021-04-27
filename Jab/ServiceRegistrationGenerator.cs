@@ -41,11 +41,28 @@ namespace {receiver.GlobalNamespace}
     public static class JabServiceRegistrations
     {{
         public static IServiceCollection Jab(this IServiceCollection services) => services{string.Join(@"
-            ", receiver.Services.Select(s => $".Add{s.Lifetime}<{s.ServiceType.ToDisplayString()},{s.ImplementationType.ToDisplayString()}>()"))};
+            ", receiver.Services.Select(FormatServiceRegistration))};
     }}
 }}
 ";
                 context.AddSource($"{receiver.GlobalNamespace}_JabServiceRegistrations.cs", SourceText.From(source, Encoding.UTF8));
+            }
+        }
+
+        private static readonly SymbolDisplayFormat GenericServiceDisplayFormat = new(
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+                genericsOptions: SymbolDisplayGenericsOptions.None
+            );
+
+        private static string FormatServiceRegistration((INamedTypeSymbol ServiceType, INamedTypeSymbol ImplementationType, string Lifetime) service)
+        {
+            if (service.ServiceType.IsGenericType)
+            {
+                return $".Add{service.Lifetime}(typeof({service.ServiceType.ToDisplayString(GenericServiceDisplayFormat)}<>), typeof({service.ImplementationType.ToDisplayString(GenericServiceDisplayFormat)}<>))";
+            }
+            else
+            {
+                return $".Add{service.Lifetime}<{service.ServiceType.ToDisplayString()},{service.ImplementationType.ToDisplayString()}>()";
             }
         }
 
@@ -72,6 +89,11 @@ namespace {receiver.GlobalNamespace}
                         foreach (var serviceType in type.AllInterfaces)
                         {
                             Services.Add((serviceType, type, lifetime));
+                        }
+                        // handle auto-generated interfaces
+                        if (type.BaseType?.Name == "I" + type.Name)
+                        {
+                            Services.Add((type.BaseType, type, lifetime));
                         }
                     }
                 }
