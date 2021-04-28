@@ -27,6 +27,13 @@ namespace Jab.Test
         }
 
         [Fact]
+        public void OnInitCalled()
+        {
+            var (b, c) = (new B(), new C());
+            Assert.True(new A(b, c).InitComplete);
+        }
+
+        [Fact]
         public void InheritedArgumentsInitialized()
         {
             var (b, c, f, g) = (new B(), new C(), new F(), new G());
@@ -88,7 +95,13 @@ namespace Jab.Test
         [Jab] private B b;
         [Jab] public C C { get; }
 
+        public bool InitComplete { get; private set; }
         public bool CheckB(B expected) => b == expected;
+
+        partial void OnInit()
+        {
+            InitComplete = true;
+        }
     }
 
     [Transient] public class B { }
@@ -115,11 +128,6 @@ namespace Jab.Test
     public partial class Logging
     {
         [Jab] public ILogger Logger { get; }
-
-        partial void OnInit()
-        {
-            
-        }
     }
 
     [Transient]
