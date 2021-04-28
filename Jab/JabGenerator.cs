@@ -14,8 +14,8 @@ namespace Jab
     [Generator]
     public class JabGenerator : ISourceGenerator
     {
-        private const string Namespace = "Jab";
-        private const string AttributeName = "JabAttribute";
+        public const string Namespace = "Jab";
+        public const string AttributeName = "JabAttribute";
 
         public void Initialize(GeneratorInitializationContext context)
         {

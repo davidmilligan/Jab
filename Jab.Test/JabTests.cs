@@ -131,6 +131,12 @@ namespace Jab.Test
     }
 
     [Transient]
+    public class CtrTest
+    {
+        public CtrTest(IDataErrorInfo missingDep) { }
+    }
+
+    [Transient]
     public class BaseService<T> : IBaseService<T>
     {
         public void BaseMethod(T value) { }

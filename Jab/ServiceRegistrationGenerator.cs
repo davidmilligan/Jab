@@ -27,6 +27,15 @@ namespace Jab
                 true
             );
 
+        private static readonly DiagnosticDescriptor MissingServiceRule = new(
+                "JAB0002",
+                "Dependency Not Found",
+                "A required dependency '{0}' does not appear to be registered. Did you forget to register it?",
+                "Usage",
+                DiagnosticSeverity.Warning,
+                true
+            );
+
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForPostInitialization(t => t
@@ -45,6 +54,31 @@ namespace Jab
                 foreach (var duplicate in receiver.DuplicateAttributes.Distinct())
                 {
                     context.ReportDiagnostic(Diagnostic.Create(DuplicateAttributeRule, duplicate));
+                }
+                var alreadyChecked = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+                foreach (var service in receiver.Services)
+                {
+                    if (!alreadyChecked.Contains(service.ImplementationType))
+                    {
+                        alreadyChecked.Add(service.ImplementationType);
+                        foreach (var constructorParameter in service.ImplementationType.InstanceConstructors.SelectMany(t => t.Parameters))
+                        {
+                            if (!receiver.Services.Any(t => SymbolEqualityComparer.Default.Equals(t.ServiceType, constructorParameter.Type)))
+                            {
+                                var location = service.Syntax.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(t => t.ParameterList.Parameters).FirstOrDefault(t => t.Type.ToString() == constructorParameter?.Type?.Name && t.Identifier.ToString() == constructorParameter.Name)?.Type.GetLocation();
+                                context.ReportDiagnostic(Diagnostic.Create(MissingServiceRule, location ?? service.Syntax.GetLocation(), constructorParameter.Type?.ToDisplayString()));
+                            }
+                        }
+                        foreach (var (symbol, serviceType) in service.ImplementationType.GetMembers().Where(t => t.HasAttribute(JabGenerator.Namespace, JabGenerator.AttributeName)).Select(t => (t, t is IPropertySymbol p ? p.Type : t is IFieldSymbol f ? f.Type : null)))
+                        {
+                            if (!receiver.Services.Any(t => SymbolEqualityComparer.Default.Equals(t.ServiceType, serviceType)))
+                            {
+                                var location = service.Syntax.Members.OfType<PropertyDeclarationSyntax>().FirstOrDefault(t => t.Identifier.ToString() == symbol.Name)?.Type.GetLocation() ??
+                                    service.Syntax.Members.OfType<FieldDeclarationSyntax>().FirstOrDefault(t => t.Declaration.Variables.Any(v => v.Identifier.ToString() == symbol.Name))?.Declaration.Type.GetLocation();
+                                context.ReportDiagnostic(Diagnostic.Create(MissingServiceRule, location ?? service.Syntax.GetLocation(), serviceType?.ToDisplayString()));
+                            }
+                        }
+                    }
                 }
                 var source = $@"
 using Microsoft.Extensions.DependencyInjection;
@@ -67,7 +101,7 @@ namespace {receiver.AssemblyNamespace}
                 genericsOptions: SymbolDisplayGenericsOptions.None
             );
 
-        private static string FormatServiceRegistration((INamedTypeSymbol ServiceType, INamedTypeSymbol ImplementationType, string Lifetime) service)
+        private static string FormatServiceRegistration((INamedTypeSymbol ServiceType, INamedTypeSymbol ImplementationType, string Lifetime, TypeDeclarationSyntax Syntax) service)
         {
             if (service.ServiceType.IsGenericType)
             {
@@ -82,7 +116,7 @@ namespace {receiver.AssemblyNamespace}
         private class SyntaxReceiver : ISyntaxContextReceiver
         {
             public string? AssemblyNamespace { get; private set; }
-            public List<(INamedTypeSymbol ServiceType, INamedTypeSymbol ImplementationType, string Lifetime)> Services { get; } = new();
+            public List<(INamedTypeSymbol ServiceType, INamedTypeSymbol ImplementationType, string Lifetime, TypeDeclarationSyntax Syntax)> Services { get; } = new();
             public List<Location> DuplicateAttributes { get; } = new();
             public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
             {
@@ -125,15 +159,15 @@ namespace {receiver.AssemblyNamespace}
                     if (lifetime != null)
                     {
                         AssemblyNamespace ??= type.ContainingAssembly.Name;
-                        Services.Add((type, type, lifetime));
+                        Services.Add((type, type, lifetime, typeSyntax));
                         foreach (var serviceType in type.AllInterfaces)
                         {
-                            Services.Add((serviceType, type, lifetime));
+                            Services.Add((serviceType, type, lifetime, typeSyntax));
                         }
                         // handle auto-generated interfaces
                         if (type.BaseType?.Name == "I" + type.Name)
                         {
-                            Services.Add((type.BaseType, type, lifetime));
+                            Services.Add((type.BaseType, type, lifetime, typeSyntax));
                         }
                     }
                 }
