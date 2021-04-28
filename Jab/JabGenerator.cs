@@ -59,7 +59,10 @@ namespace {type.Key.ContainingNamespace.ToDisplayString()}
         {{
             {string.Join(@"
             ", type.Select(t => $"this.{t.Symbol.Name} = {t.Symbol.Name};"))}
+            OnInit();
         }}
+
+        partial void OnInit();
     }}
 }}
 ";

@@ -115,6 +115,11 @@ namespace Jab.Test
     public partial class Logging
     {
         [Jab] public ILogger Logger { get; }
+
+        partial void OnInit()
+        {
+            
+        }
     }
 
     [Transient]
