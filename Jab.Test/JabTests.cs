@@ -127,6 +127,8 @@ namespace Jab.Test
     {
         public int Property { get; set; }
         public string? Readonly { get; }
+        public string? PrivateWrite { get; private set; }
+        public object CustomProp { get { return new object(); } set { } }
         public object this[string arg1] { get => Property; set { } }
 
         public async Task MethodAsync(CancellationToken token = default)

@@ -75,7 +75,7 @@ namespace {type.ContainingNamespace.ToDisplayString()}
     public interface {BuildTypeName(type, baseTypeAutoInterface)}
     {{
         {string.Join(@"
-        ", properties.Select(t => t.ToDisplayString(PropertyDisplayFormat)))}
+        ", properties.Select(t => CleanupProperties(t.ToDisplayString(PropertyDisplayFormat))))}
         {string.Join(@"
         ", methods.Select(t => t.ToDisplayString(MethodDisplayFormat) + ";"))}
         {string.Join(@"
@@ -83,11 +83,21 @@ namespace {type.ContainingNamespace.ToDisplayString()}
     }}
 }}
 ";
-                    File.WriteAllText($"C:\\temp\\JabGenerated_I{type.Name}.cs", source);
                     context.AddSource($"JabGenerated_I{type.Name}.cs", SourceText.From(source, Encoding.UTF8));
                 }
             }
         }
+        private static string CleanupProperties(string property) => property
+            .Replace("private set;", "")
+            .Replace("protected set;", "")
+            .Replace("internal protected set;", "")
+            .Replace("protected internal set;", "")
+            .Replace("internal set;", "")
+            .Replace("private get;", "")
+            .Replace("protected get;", "")
+            .Replace("internal protected get;", "")
+            .Replace("protected internal get;", "")
+            .Replace("internal get;", "");
 
         private static IEnumerable<INamedTypeSymbol> Interfaces(INamedTypeSymbol type) => type.Interfaces.Where(t => t.Name != $"I{type.Name}");
         private static IEnumerable<string> InterfaceNames(INamedTypeSymbol type) => Interfaces(type).Select(t => t.ToDisplayString(ImplementedTypeDisplayFormat));
